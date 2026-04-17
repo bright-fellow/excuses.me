@@ -1,37 +1,161 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# excuses.me
 
-## Getting Started
+An AI-powered excuse generator that creates convincing, culturally-appropriate excuses in multiple languages and regional dialects. Perfect for when you need to get out of that awkward situation with style.
 
-First, run the development server:
+![excuses.me](https://img.shields.io/badge/Status-Live-brightgreen) ![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black) ![Next.js](https://img.shields.io/badge/Framework-Next.js-black) ![AI](https://img.shields.io/badge/Powered%20by-Groq-blue)
 
+## 🌟 Features
+
+### 🎭 Multiple Tones & Styles
+- **Apologetic**: Sincere remorse
+- **Funny**: Self-deprecating humor
+- **Professional**: Corporate-appropriate
+- **Dramatic**: Over-the-top theatrical
+- **Creative**: Wildly inventive
+
+### 📏 Length Options
+- **Short**: 1-2 sentences
+- **Medium**: 3-4 sentences
+- **Long**: 5-7 sentences with details
+
+### 🌍 Regional Dialects
+
+#### 🇺🇸 United States
+- General US, New York, Los Angeles, Deep South, Midwest, Texas, New England
+
+#### 🇬🇧 United Kingdom
+- General UK, London (RP), Cockney, Manchester, Leeds, Liverpool, Scotland, Wales, Posh
+
+#### 🇦🇹 Austria (9 Bundesländer)
+- Allgemein, Wien, Tirol, Steiermark, Salzburg, Vorarlberg, Burgenland, Kärnten, Niederösterreich, Oberösterreich
+
+#### 🇨🇭 Switzerland (13 Kantone)
+- Allgemein, Zürich, Bern, Basel, Genf (French), Wallis, Tessin (Italian), Graubünden (Romansh), Luzern, St. Gallen, Thurgau, Zug, Aargau
+
+### 🎯 Smart Features
+- **Location Detection**: Automatically detects browser language/timezone for default settings
+- **Collapsible Options**: Clean UI with tag display for selected settings
+- **Instant Generation**: Powered by Groq's Llama 3.3 70B model
+- **No Account Required**: Free to use, no data stored
+
+## 🚀 Live Demo
+
+Visit [excuses.me](https://excusesme.vercel.app) to try it out!
+
+## 🛠️ Tech Stack
+
+- **Frontend**: Next.js 16, React, CSS Modules
+- **AI**: Groq API (Llama 3.3 70B Versatile)
+- **Deployment**: Vercel
+- **Analytics**: Google Analytics 4, Meta Pixel, TikTok Pixel, Snapchat Pixel
+- **Ads**: Google AdSense
+- **Styling**: Custom CSS with Geist font
+
+## 📦 Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/excuses-nextjs.git
+   cd excuses-nextjs
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables**
+   ```bash
+   cp .env.example .env.local
+   ```
+
+   Edit `.env.local` with your API keys:
+   ```env
+   GROQ_API_KEY=your_groq_api_key_here
+   NEXT_PUBLIC_GA4_ID=your_ga4_measurement_id
+   NEXT_PUBLIC_ADSENSE_ID=your_adsense_publisher_id
+   # ... other ad/analytics IDs
+   ```
+
+4. **Run development server**
+   ```bash
+   npm run dev
+   ```
+
+   Open [http://localhost:3000](http://localhost:3000)
+
+## 🏗️ Build & Deploy
+
+### Local Build
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run build
+npm run start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Deploy to Vercel
+```bash
+npm install -g vercel
+vercel --prod
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📖 Usage
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Enter your situation**: Type what you need an excuse for
+2. **Customize options**: Click "Show options" to select tone, length, and regional style
+3. **Generate**: Click the generate button
+4. **Copy & use**: Copy the excuse and deliver it
 
-## Learn More
+### API Usage
 
-To learn more about Next.js, take a look at the following resources:
+The app uses a simple API endpoint:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```javascript
+const response = await fetch('/api/generate', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    system: 'Your system prompt',
+    user: 'Your situation'
+  })
+});
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🎨 UI/UX Design
 
-## Deploy on Vercel
+- **Clean Interface**: Minimalist design with focus on functionality
+- **Responsive**: Works on desktop and mobile
+- **Accessible**: Proper contrast and keyboard navigation
+- **Fast**: Optimized for quick generation
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🤝 Contributing
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Contributions welcome! Please:
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+### Adding New Regions/Dialects
+
+1. Add to `REGIONS` object in `app/page.jsx`
+2. Add corresponding prompt in `CULTURE_PROMPTS`
+3. Update `REGION_LABEL` if needed
+4. Test the new dialect output
+
+## 📄 License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+## 🙏 Acknowledgments
+
+- Powered by [Groq](https://groq.com) for fast AI inference
+- Built with [Next.js](https://nextjs.org)
+- Deployed on [Vercel](https://vercel.com)
+- Fonts by [Vercel](https://vercel.com/font)
+
+---
+
+**Made with ❤️ for those "oops" moments**
 # excuses.me
