@@ -113,9 +113,13 @@
   color: var(--black); font-size: .75rem; font-weight: 500;
 }
 .optionsPopover {
+  position: relative;
   margin-top: .85rem; padding: 1rem 1rem 1.1rem;
   background: var(--bg); border: 1px solid var(--line);
   border-radius: 18px; box-shadow: 0 12px 40px rgba(0,0,0,.06);
+}
+.popoverClose {
+  display: none;
 }
 
 .toggleOptionsBtn {
@@ -577,7 +581,13 @@
   .optionsPopover {
     position: fixed; top: 0; left: 0; right: 0; bottom: 0;
     border-radius: 0; z-index: 100; background: var(--bg);
-    padding: 2rem 1rem; overflow-y: auto;
+    padding: 3.5rem 1rem 2rem; overflow-y: auto;
+  }
+  .popoverClose {
+    display: flex; position: absolute; top: .85rem; right: .85rem;
+    width: 36px; height: 36px; align-items: center; justify-content: center;
+    border-radius: 50%; border: 1px solid var(--line); background: var(--bg2);
+    color: var(--black); font-size: 1rem; cursor: pointer;
   }
   .scenarioRow { justify-content: center; }
   .scenarioPills { justify-content: center; }

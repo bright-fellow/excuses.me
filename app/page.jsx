@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import styles from './page.module.css';
 import ErrorBoundary from './components/ErrorBoundary';
+import { useLocale } from './lib/i18n';
 
 // ── SUPABASE CLIENT (browser-side auth) ───────────────────────────────────────
 const _sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -328,6 +329,7 @@ function trackEvent(name, params) {
 // ── COMPONENT ─────────────────────────────────────────────────────────────────
 
 export default function Home() {
+  const { T } = useLocale();
   const [occasion, setOccasion]         = useState('');
   const [scenario, setScenario]         = useState('General');
   const [tone,     setTone]             = useState('Apologetic');
@@ -461,14 +463,14 @@ export default function Home() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setExcuse(data.error ?? 'Something went wrong — please try again.');
+        setExcuse(data.error ?? T.errors.somethingWentWrong);
       } else {
         setExcuse(data.text);
         setExcuseMeta(`${REGION_LABEL[region] ?? region} · ${tone} · ${length}`);
         trackEvent('generate_excuse', { region, tone, length });
       }
     } catch {
-      setExcuse('Connection error — please try again.');
+      setExcuse(T.errors.connectionError);
     } finally {
       setLoading(false);
     }
@@ -484,7 +486,7 @@ export default function Home() {
 
   const startVoiceInput = useCallback(() => {
     if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-      showToast("Voice input isn't supported in this browser. Try Chrome or Safari.", 'info');
+      showToast(T.errors.voiceNotSupported, 'info');
       return;
     }
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -532,10 +534,10 @@ export default function Home() {
         setShowSubmitModal(false);
         fetchTopExcuses();
       } else {
-        showToast(data.error || 'Failed to submit excuse. Please try again.');
+        showToast(data.error || T.errors.submitFailed);
       }
     } catch (err) {
-      showToast('Connection error — please try again.');
+      showToast(T.errors.connectionError);
       console.error(err);
     }
   }, [userExcuse, region, tone, length, fetchTopExcuses]);
@@ -555,19 +557,19 @@ export default function Home() {
           excuses<span className={styles.logoAcc}>.</span>me
         </div>
         <ul className={styles.navLinks}>
-          <li onClick={() => scrollTo('features')}>Features</li>
-          <li onClick={() => scrollTo('how')}>How it works</li>
-          <li onClick={() => scrollTo('top-excuses')}>Top Excuses</li>
+          <li onClick={() => scrollTo('features')}>{T.nav.features}</li>
+          <li onClick={() => scrollTo('how')}>{T.nav.howItWorks}</li>
+          <li onClick={() => scrollTo('top-excuses')}>{T.nav.topExcuses}</li>
         </ul>
         {supabase && (
           user ? (
-            <button className={styles.btnNavUser} onClick={signOut} title="Sign out">
+            <button className={styles.btnNavUser} onClick={signOut} title={T.nav.signOut}>
               <span className={styles.userAvatar}>{(user.email?.[0] ?? '?').toUpperCase()}</span>
-              <span className={styles.userLabel}>Sign out</span>
+              <span className={styles.userLabel}>{T.nav.signOut}</span>
             </button>
           ) : (
             <button className={styles.btnNav} onClick={() => setShowLoginModal(true)}>
-              Sign in
+              {T.nav.signIn}
             </button>
           )
         )}
@@ -580,14 +582,14 @@ export default function Home() {
       <section className={styles.hero}>
         <div className={styles.heroTag}>
           <span className={styles.tagDot} />
-          AI-powered · Free forever · No credit card
+          {T.hero.badge}
         </div>
         <h1 className={styles.h1}>
-          The excuse you need,{' '}
-          <span className={styles.h1Acc}>now.</span>
+          {T.hero.titleLine1}{' '}
+          <span className={styles.h1Acc}>{T.hero.titleAccent}</span>
         </h1>
         <p className={styles.heroSub}>
-          Type your situation. Pick a voice — from NYC bluntness to Swiss German charm. Get a real excuse that actually works.
+          {T.hero.subtitle}
         </p>
 
         {/* ── GENERATOR ── */}
@@ -596,7 +598,7 @@ export default function Home() {
 
           {/* Scenario selector */}
           <div className={styles.scenarioRow}>
-            <span className={styles.scenarioLabel}>Category</span>
+            <span className={styles.scenarioLabel}>{T.generator.category}</span>
             <div className={styles.scenarioPills}>
               {Object.keys(SCENARIOS).map(s => (
                 <button
@@ -604,7 +606,7 @@ export default function Home() {
                   className={`${styles.scenarioPill} ${scenario === s ? styles.scenarioPillActive : ''}`}
                   onClick={() => setScenario(s)}
                 >
-                  {SCENARIOS[s].label}
+                  {T.scenarios[s]?.label ?? SCENARIOS[s].label}
                 </button>
               ))}
             </div>
@@ -612,7 +614,7 @@ export default function Home() {
 
           {/* Quick-fill examples — shown right under the category */}
           <div className={styles.qf}>
-            {SCENARIOS[scenario].examples.map((q, i) => (
+            {(T.scenarios[scenario]?.examples ?? SCENARIOS[scenario].examples).map((q, i) => (
               <span key={q}>
                 {i > 0 && <span className={styles.qfSep}>/</span>}
                 <span className={styles.qfItem} onClick={() => setOccasion(q)}>{q}</span>
@@ -628,14 +630,14 @@ export default function Home() {
               value={occasion}
               onChange={e => setOccasion(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && generate()}
-              placeholder={PLACEHOLDERS[country] || "e.g. missing my cousin's birthday dinner…"}
+              placeholder={PLACEHOLDERS[country] || T.generator.defaultPlaceholder}
               autoComplete="off"
             />
             <button
               className={styles.voiceBtn}
               onClick={startVoiceInput}
               disabled={voiceListening}
-              title="Voice input"
+              title={T.generator.voiceInput}
             >
               <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
@@ -657,7 +659,7 @@ export default function Home() {
                   <polyline points="12 5 19 12 12 19"/>
                 </svg>
               )}
-              <span>{loading ? '' : 'Get excuse'}</span>
+              <span>{loading ? '' : T.generator.getExcuse}</span>
             </button>
           </div>
 
@@ -668,7 +670,7 @@ export default function Home() {
               type="button"
             >
               <span className={styles.toggleIcon}>{showOptions ? '−' : '+'}</span>
-              {showOptions ? 'Hide style controls' : 'Show style controls'}
+              {showOptions ? T.generator.hideStyleControls : T.generator.showStyleControls}
             </button>
             <div className={styles.optionTags}>
               <span className={styles.optionTag}>{tone}</span>
@@ -681,11 +683,16 @@ export default function Home() {
 
           {showOptions && (
             <div className={styles.optionsPopover}>
+              <button
+                className={styles.popoverClose}
+                onClick={() => setShowOptions(false)}
+                aria-label={T.generator.close}
+              >✕</button>
               <div className={styles.controls}>
 
                 {/* Tone */}
                 <div className={styles.ctrlGroup}>
-                  <span className={styles.ctrlLabel}>Tone</span>
+                  <span className={styles.ctrlLabel}>{T.generator.tone}</span>
                   <div className={styles.ctrlPills}>
                     {TONES.map(t => (
                       <button
@@ -693,11 +700,7 @@ export default function Home() {
                         className={`${styles.cpill} ${tone === t ? styles.cpillActive : ''}`}
                         onClick={() => setTone(t)}
                       >
-                        {t === 'Apologetic' ? 'Sorry'
-                        : t === 'Professional' ? 'Pro'
-                        : t === 'Dramatic' ? 'Drama'
-                        : t === 'Creative' ? 'Wild'
-                        : t}
+                        {T.toneShort[t] ?? t}
                       </button>
                     ))}
                   </div>
@@ -705,7 +708,7 @@ export default function Home() {
 
                 {/* Length */}
                 <div className={styles.ctrlGroup}>
-                  <span className={styles.ctrlLabel}>Length</span>
+                  <span className={styles.ctrlLabel}>{T.generator.length}</span>
                   <div className={styles.ctrlPills}>
                     {LENGTHS.map(l => (
                       <button
@@ -713,7 +716,7 @@ export default function Home() {
                         className={`${styles.cpill} ${length === l ? styles.cpillActive : ''}`}
                         onClick={() => setLength(l)}
                       >
-                        {l}
+                        {T.lengths[l] ?? l}
                       </button>
                     ))}
                   </div>
@@ -722,7 +725,7 @@ export default function Home() {
                 {/* Country + Region */}
                 <div className={styles.ctrlGroupFull}>
                   <div className={styles.ctrlGroupRow}>
-                    <span className={styles.ctrlLabel}>Style</span>
+                    <span className={styles.ctrlLabel}>{T.generator.style}</span>
                     <div className={styles.ctrlPills}>
                       {COUNTRIES.map(c => (
                         <button
@@ -731,14 +734,14 @@ export default function Home() {
                           onClick={() => handleCountry(c)}
                         >
                           {COUNTRY_FLAGS[c]}
-                          {c === 'AT' ? 'Austria' : c === 'CH' ? 'Swiss' : c === 'DE' ? 'Germany' : c === 'IE' ? 'Ireland' : c === 'AU' ? 'Australia' : c}
+                          {T.countries[c] ?? c}
                         </button>
                       ))}
                     </div>
                   </div>
                   {REGIONS[country]?.length > 1 && (
                     <div className={styles.ctrlGroupRow} style={{ paddingLeft: 46 }}>
-                      <span className={styles.ctrlLabelDim}>Region</span>
+                      <span className={styles.ctrlLabelDim}>{T.generator.region}</span>
                       <div className={styles.ctrlPills} style={{ flexWrap: 'wrap' }}>
                         {REGIONS[country].map(r => (
                           <button
@@ -754,10 +757,10 @@ export default function Home() {
                   )}
                 </div>
                 <div className={styles.styleHint}>
-                  <div>{REGION_HINTS[region] || 'Pick a style to give your excuse a local, believable voice.'}</div>
+                  <div>{T.regionHints[region] || T.generator.styleHintFallback}</div>
                   {REGION_EXAMPLES[region] && (
                     <div className={styles.styleExample}>
-                      "{REGION_EXAMPLES[region]}"
+                      &ldquo;{REGION_EXAMPLES[region]}&rdquo;
                     </div>
                   )}
                 </div>
@@ -773,10 +776,10 @@ export default function Home() {
                 <span className={styles.resultMeta}>{excuseMeta}</span>
                 <div className={styles.resultBtns}>
                   <button className={styles.rbtn} onClick={copyExcuse}>
-                    {copied ? 'Copied' : 'Copy'}
+                    {copied ? T.generator.copied : T.generator.copy}
                   </button>
                   <button className={styles.rbtn} onClick={generate}>
-                    Shake it up
+                    {T.generator.shakeItUp}
                   </button>
                 </div>
               </div>
@@ -789,10 +792,10 @@ export default function Home() {
         {/* ── TOP EXCUSES ── */}
         <div id="top-excuses" className={styles.topExcuses}>
           <div className={styles.topExcusesHeader}>
-            <h3 className={styles.topExcusesTitle}>Top Excuses</h3>
-            <p className={styles.topExcusesSub}>Popular ones that actually work</p>
+            <h3 className={styles.topExcusesTitle}>{T.topExcuses.title}</h3>
+            <p className={styles.topExcusesSub}>{T.topExcuses.subtitle}</p>
             <button className={styles.submitBtn} onClick={handleSubmitClick}>
-              {user ? 'Share Your Excuse' : 'Sign in to Share'}
+              {user ? T.topExcuses.shareBtn : T.topExcuses.signInToShare}
             </button>
           </div>
           {topLoading ? (
@@ -816,7 +819,7 @@ export default function Home() {
                       <button className={styles.topExcuseLike} onClick={() => likeExcuse(exc.id)}>
                         +1 {exc.likes}
                       </button>
-                      <button className={styles.topExcuseCopy} onClick={() => navigator.clipboard.writeText(exc.text)}>Copy</button>
+                      <button className={styles.topExcuseCopy} onClick={() => navigator.clipboard.writeText(exc.text)}>{T.generator.copy}</button>
                     </div>
                   </div>
                 </div>
@@ -824,7 +827,7 @@ export default function Home() {
             </div>
           ) : (
             <div className={styles.topExcusesEmpty}>
-              No excuses yet — be the first to share one!
+              {T.topExcuses.empty}
             </div>
           )}
         </div>
@@ -836,48 +839,26 @@ export default function Home() {
 
       {/* ── FEATURES ── */}
       <section id="features" className={styles.features}>
-        <div className={styles.secLabel}>Features</div>
-        <h2 className={styles.h2}>Everything you need.<br />Nothing you don&apos;t.</h2>
-        <p className={styles.secSub}>Built for the moment of panic. Designed to feel effortless.</p>
+        <div className={styles.secLabel}>{T.features.label}</div>
+        <h2 className={styles.h2}>{T.features.titleLine1}<br />{T.features.titleLine2}</h2>
+        <p className={styles.secSub}>{T.features.subtitle}</p>
         <div className={styles.featGrid}>
           {[
-            {
-              icon: <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>,
-              title: 'Context-aware',
-              desc:  'Reads your specific situation. Writes an excuse that fits the relationship, stakes, and moment.',
-            },
-            {
-              icon: <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
-              title: 'Five tones',
-              desc:  'Apologetic, funny, professional, dramatic, or creative. Same situation — five different excuses.',
-            },
-            {
-              icon: <svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="16" y2="12"/><line x1="4" y1="18" x2="10" y2="18"/></svg>,
-              title: 'Three lengths',
-              desc:  'A quick line for a text, or a full paragraph for the email that really needs to land.',
-            },
-            {
-              icon: <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3"/></svg>,
-              title: 'Instant regeneration',
-              desc:  'Not quite right? One click gets you a completely fresh take on the same situation.',
-            },
-            {
-              icon: <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
-              title: 'Nothing stored',
-              desc:  'Your situation disappears the moment you close the tab. No logs. No history.',
-            },
-            {
-              icon: <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
-              title: 'Under 3 seconds',
-              desc:  'Results arrive before the panic sets in. Fast enough for the message you needed 5 minutes ago.',
-            },
-          ].map(({ icon, title, desc }) => (
-            <div key={title} className={styles.featCard}>
+            { icon: <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg> },
+            { icon: <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> },
+            { icon: <svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="16" y2="12"/><line x1="4" y1="18" x2="10" y2="18"/></svg> },
+            { icon: <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3"/></svg> },
+            { icon: <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> },
+            { icon: <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> },
+          ].map(({ icon }, i) => {
+            const { title, desc } = T.features.cards[i];
+            return (
+            <div key={i} className={styles.featCard}>
               <div className={styles.featIcon}>{icon}</div>
               <h3 className={styles.featTitle}>{title}</h3>
               <p className={styles.featDesc}>{desc}</p>
             </div>
-          ))}
+          );})}
         </div>
       </section>
 
@@ -885,15 +866,11 @@ export default function Home() {
       <div id="how" className={styles.how}>
         <div className={styles.howInner}>
           <div className={styles.howLeft}>
-            <div className={styles.secLabel}>How it works</div>
-            <h2 className={styles.h2}>Three steps.<br />Zero effort.</h2>
-            <p className={styles.secSub}>No setup. No account. Just the excuse you need.</p>
+            <div className={styles.secLabel}>{T.how.label}</div>
+            <h2 className={styles.h2}>{T.how.titleLine1}<br />{T.how.titleLine2}</h2>
+            <p className={styles.secSub}>{T.how.subtitle}</p>
             <div className={styles.steps}>
-              {[
-                { n: '01', title: 'Describe the situation', desc: 'Type what you need to get out of — a phrase is enough. The AI fills in the rest.' },
-                { n: '02', title: 'Choose tone, length & style', desc: 'Match the register to your audience. Different people need very different approaches.' },
-                { n: '03', title: 'Copy and deliver', desc: 'Your excuse is ready in seconds. Copy it, send it, say it. Done.' },
-              ].map(({ n, title, desc }) => (
+              {T.how.steps.map(({ n, title, desc }) => (
                 <div key={n} className={styles.step}>
                   <div className={styles.stepNum}>{n}</div>
                   <div>
@@ -926,14 +903,14 @@ export default function Home() {
 
       {/* ── FINAL CTA ── */}
       <section className={styles.ctaSection}>
-        <h2 className={styles.h2}>Start with your<br />first excuse.</h2>
-        <p className={styles.ctaBody}>Free, instant, no account needed. Just type and go.</p>
+        <h2 className={styles.h2}>{T.cta.titleLine1}<br />{T.cta.titleLine2}</h2>
+        <p className={styles.ctaBody}>{T.cta.body}</p>
         <div className={styles.ctaBtns}>
           <button
             className={`${styles.btnLg} ${styles.btnLgDark}`}
             onClick={goToGenerator}
           >
-            Generate now
+            {T.cta.btn}
           </button>
         </div>
       </section>
@@ -944,32 +921,32 @@ export default function Home() {
           excuses<span className={styles.logoAcc}>.</span>me
         </div>
         <div className={styles.footLinks}>
-          <a href="/privacy">Privacy</a>
-          <a href="/terms">Terms</a>
-          <a href="mailto:hello@excuses.me">Contact</a>
+          <a href="/privacy">{T.footer.privacy}</a>
+          <a href="/terms">{T.footer.terms}</a>
+          <a href="mailto:hello@excuses.me">{T.footer.contact}</a>
         </div>
-        <span className={styles.footCopy}>© 2026 — use responsibly. Ads help keep this service free.</span>
+        <span className={styles.footCopy}>{T.footer.copy}</span>
       </footer>
 
       {/* ── SUBMIT MODAL ── */}
       {showSubmitModal && (
         <div className={styles.modalOverlay} onClick={() => setShowSubmitModal(false)}>
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
-            <h4 className={styles.modalTitle}>Share Your Excuse</h4>
+            <h4 className={styles.modalTitle}>{T.submit.title}</h4>
             <textarea
               className={styles.modalTextarea}
               value={userExcuse}
               onChange={e => setUserExcuse(e.target.value)}
-              placeholder="Share a funny or useful excuse you've used…"
+              placeholder={T.submit.placeholder}
               rows={4}
             />
             <p className={styles.modalNote}>
-              Keep it clean — submissions are moderated. By sharing you agree to our{' '}
-              <a href="/privacy" target="_blank">Privacy Policy</a>.
+              {T.submit.note}{' '}
+              <a href="/privacy" target="_blank">{T.submit.privacyPolicy}</a>.
             </p>
             <div className={styles.modalBtns}>
-              <button className={styles.modalCancel} onClick={() => setShowSubmitModal(false)}>Cancel</button>
-              <button className={styles.modalSubmit} onClick={submitUserExcuse}>Share</button>
+              <button className={styles.modalCancel} onClick={() => setShowSubmitModal(false)}>{T.submit.cancel}</button>
+              <button className={styles.modalSubmit} onClick={submitUserExcuse}>{T.submit.share}</button>
             </div>
           </div>
         </div>
@@ -988,11 +965,11 @@ export default function Home() {
         <div className={styles.modalOverlay} onClick={() => setShowLoginModal(false)}>
           <div className={styles.modal} onClick={e => e.stopPropagation()}>
             <button className={styles.modalClose} onClick={() => setShowLoginModal(false)} aria-label="Close">✕</button>
-            <h4 className={styles.modalTitle}>Coming soon</h4>
+            <h4 className={styles.modalTitle}>{T.login.title}</h4>
             <p className={styles.loginSub}>
-              Sign-in and community sharing are on the way. Generating excuses is always free.
+              {T.login.body}
             </p>
-            <p className={styles.loginNote}>No spam. No nonsense. Just excuses.</p>
+            <p className={styles.loginNote}>{T.login.note}</p>
           </div>
         </div>
       )}

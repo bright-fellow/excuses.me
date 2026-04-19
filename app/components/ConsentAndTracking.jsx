@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react';
 import Script from 'next/script';
 import styles from './ConsentAndTracking.module.css';
+import { useLocale } from '../lib/i18n';
 
 const STORAGE_KEY = 'excuses_cookie_consent';
 
 export default function ConsentAndTracking({ nonce }) {
+  const { T } = useLocale();
   const [consent, setConsent] = useState(null); // null = not yet read from storage
 
   useEffect(() => {
@@ -103,16 +105,15 @@ export default function ConsentAndTracking({ nonce }) {
         <div className={styles.banner} role="region" aria-label="Cookie consent">
           <div className={styles.inner}>
             <div className={styles.text}>
-              <strong className={styles.title}>Cookies &amp; ads</strong>
+              <strong className={styles.title}>{T.consent.title}</strong>
               <p className={styles.body}>
-                We use cookies for analytics and ads — that is how we keep this service free.
-                You can decline and still use everything.{' '}
-                <a href="/privacy" className={styles.link}>Privacy policy</a>
+                {T.consent.body}{' '}
+                <a href="/privacy" className={styles.link}>{T.consent.privacyPolicy}</a>
               </p>
             </div>
             <div className={styles.actions}>
-              <button className={styles.btnDecline} onClick={decline}>Decline</button>
-              <button className={styles.btnAccept} onClick={accept}>Accept</button>
+              <button className={styles.btnDecline} onClick={decline}>{T.consent.decline}</button>
+              <button className={styles.btnAccept} onClick={accept}>{T.consent.accept}</button>
             </div>
           </div>
         </div>
