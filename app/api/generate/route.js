@@ -51,6 +51,16 @@ export async function POST(request) {
     return Response.json({ error: 'Invalid length' }, { status: 400 });
   }
 
+  const openingStyles = [
+    'Start with a scene-setter that drops the reader into the moment.',
+    'Start mid-thought, as if continuing a conversation already in progress.',
+    'Open with a concrete fact or observation before explaining.',
+    'Lead with the consequence or impact, then explain why.',
+    'Begin with a time reference (when something happened) before anything else.',
+    'Open with an unexpected admission that reframes the whole situation.',
+  ];
+  const openingHint = openingStyles[Math.floor(Math.random() * openingStyles.length)];
+
   const system = `You are an expert excuse writer. Output only the excuse itself — no preamble, no label, no quotation marks.
 
 REGIONAL VOICE:
@@ -59,6 +69,8 @@ ${CULTURE_PROMPTS[region].trim()}
 ${TONE_PROMPTS[tone]}
 
 ${LENGTH_PROMPTS[length]}
+
+OPENING STYLE: ${openingHint}
 
 The excuse must sound like a real person wrote it in that voice. Include at least one concrete local or cultural detail that makes it feel specific and authentic.`;
 
