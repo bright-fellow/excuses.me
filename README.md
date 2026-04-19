@@ -69,15 +69,23 @@ Visit [excuses.me](https://excusesme.vercel.app) to try it out!
    cp .env.example .env.local
    ```
 
-   Edit `.env.local` with your API keys:
+   Edit `.env.local` with your API keys and database settings:
    ```env
    GROQ_API_KEY=your_groq_api_key_here
    NEXT_PUBLIC_GA4_ID=your_ga4_measurement_id
    NEXT_PUBLIC_ADSENSE_ID=your_adsense_publisher_id
+   SUPABASE_URL=https://your-project.supabase.co
+   SUPABASE_ANON_KEY=your-anon-key
    # ... other ad/analytics IDs
    ```
 
-4. **Run development server**
+4. **Set up the Supabase table**
+   1. Open your Supabase project dashboard
+   2. Go to Database → SQL Editor
+   3. Paste the SQL from `db/schema.sql`
+   4. Run the query
+
+5. **Run development server**
    ```bash
    npm run dev
    ```
@@ -85,6 +93,12 @@ Visit [excuses.me](https://excusesme.vercel.app) to try it out!
    Open [http://localhost:3000](http://localhost:3000)
 
 ## 🏗️ Build & Deploy
+
+### Supabase & GDPR Notes
+- The app stores only user-submitted excuse text and minimal metadata needed to display region/tone/length.
+- Ads fund deployment and related services; no personal data is sold.
+- For GDPR compliance, include a privacy policy and allow users to review/delete their own submissions by contacting your support address.
+- See `app/privacy/page.jsx` for the current privacy page content.
 
 ### Local Build
 ```bash

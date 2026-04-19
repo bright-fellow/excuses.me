@@ -1,7 +1,27 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          // CSP is set per-request by proxy.ts (with a unique nonce)
+          { key: 'X-Content-Type-Options',  value: 'nosniff' },
+          { key: 'X-Frame-Options',          value: 'SAMEORIGIN' },
+          { key: 'Referrer-Policy',          value: 'strict-origin-when-cross-origin' },
+          { key: 'Permissions-Policy',       value: 'camera=(), geolocation=(), microphone=(self)' },
+        ],
+      },
+    ];
+  },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  org:     process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  silent:  true,
+  disableLogger: true,
+  tunnelRoute: '/monitoring',
+});

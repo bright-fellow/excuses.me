@@ -1,68 +1,95 @@
-import { NextResponse } from 'next/server';
+import { CULTURE_PROMPTS, TONE_PROMPTS, LENGTH_PROMPTS, VALID_REGIONS, VALID_TONES, VALID_LENGTHS } from '@/app/lib/prompts';
 
-export const runtime = 'edge'; // fast cold starts on Vercel
+export const runtime = 'edge';
+
+// Edge-compatible sliding-window rate limiter (per IP, in-memory within the edge instance)
+// For multi-region distributed limiting, set UPSTASH_REDIS_REST_URL/TOKEN.
+const ipMap = new Map();
+const WINDOW_MS    = 60 * 1000;
+const MAX_PER_MIN  = 10;
+
+function checkGenerateLimit(ip) {
+  const now    = Date.now();
+  const recent = (ipMap.get(ip) ?? []).filter(ts => now - ts < WINDOW_MS);
+  if (recent.length >= MAX_PER_MIN) return false;
+  recent.push(now);
+  if (recent.length > 0) ipMap.set(ip, recent);
+  else ipMap.delete(ip);
+  return true;
+}
 
 export async function POST(request) {
   const apiKey = process.env.GROQ_API_KEY;
-
   if (!apiKey) {
-    return NextResponse.json(
-      { error: 'GROQ_API_KEY is not configured' },
-      { status: 500 }
-    );
+    return Response.json({ error: 'GROQ_API_KEY is not configured' }, { status: 500 });
+  }
+
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  if (!checkGenerateLimit(ip)) {
+    return Response.json({ error: 'Too many requests. Please wait a moment.' }, { status: 429 });
   }
 
   let body;
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    return Response.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { system, user } = body;
-  if (!system || !user) {
-    return NextResponse.json(
-      { error: 'Missing required fields: system, user' },
-      { status: 400 }
-    );
+  const { occasion, region, tone, length } = body;
+
+  if (!occasion || typeof occasion !== 'string' || occasion.trim().length < 2 || occasion.length > 500) {
+    return Response.json({ error: 'Invalid occasion' }, { status: 400 });
   }
+  if (!VALID_REGIONS.has(region)) {
+    return Response.json({ error: 'Invalid region' }, { status: 400 });
+  }
+  if (!VALID_TONES.has(tone)) {
+    return Response.json({ error: 'Invalid tone' }, { status: 400 });
+  }
+  if (!VALID_LENGTHS.has(length)) {
+    return Response.json({ error: 'Invalid length' }, { status: 400 });
+  }
+
+  const system = [
+    'You are an expert excuse writer who deeply understands cultural communication styles.',
+    'Write a single convincing excuse. No preamble — just the excuse itself.',
+    'Make this excuse sound real, culturally appropriate, and usable in a practical situation.',
+    'When possible, include a local detail or language flavor relevant to that region.',
+    CULTURE_PROMPTS[region],
+    TONE_PROMPTS[tone],
+    LENGTH_PROMPTS[length],
+  ].join(' ');
 
   try {
-    const groqRes = await fetch(
-      'https://api.groq.com/openai/v1/chat/completions',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
-          max_tokens: 400,
-          temperature: 0.9,
-          messages: [
-            { role: 'system', content: system },
-            { role: 'user',   content: user   },
-          ],
-        }),
-      }
-    );
+    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        max_tokens: 400,
+        temperature: 0.9,
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user',   content: `Generate an excuse for: ${occasion.trim()}` },
+        ],
+      }),
+    });
 
     if (!groqRes.ok) {
       const errText = await groqRes.text();
       console.error('Groq error:', groqRes.status, errText);
-      return NextResponse.json(
-        { error: `Groq API returned ${groqRes.status}` },
-        { status: 502 }
-      );
+      return Response.json({ error: `Groq API returned ${groqRes.status}` }, { status: 502 });
     }
 
     const data = await groqRes.json();
     const text = data.choices?.[0]?.message?.content ?? '';
-
-    return NextResponse.json({ text });
+    return Response.json({ text });
   } catch (err) {
     console.error('Generate handler error:', err);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return Response.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

@@ -1,7 +1,16 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { createClient } from '@supabase/supabase-js';
 import styles from './page.module.css';
+import ErrorBoundary from './components/ErrorBoundary';
+
+// ── SUPABASE CLIENT (browser-side auth) ───────────────────────────────────────
+const _sbUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const _sbKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabase = _sbUrl && _sbKey
+  ? createClient(_sbUrl, _sbKey, { auth: { flowType: 'implicit', detectSessionInUrl: true, persistSession: true } })
+  : null;
 
 // ── DATA ──────────────────────────────────────────────────────────────────────
 
@@ -55,65 +64,6 @@ const REGIONS = {
   ],
 };
 
-const CULTURE_PROMPTS = {
-  'US.national':   `Write in a confident, direct American style. Warm, slightly over-expressive, positive spin at the end. Phrases like "I totally appreciate your patience" or "I really apologise for the inconvenience" are typical.`,
-  'US.NYC':        `Write like a fast-talking New Yorker. Direct, no-nonsense, slightly brusque but not unkind. Get to the point fast. A hint of "I got a lotta things going on" energy. Zero fluff.`,
-  'US.LA':         `Write in a laid-back Los Angeles style. Breezy, wellness-aware, maybe reference traffic on the 405. Phrases like "totally my bad", "it's been such a crazy week", "I really want to make this right" fit perfectly.`,
-  'US.South':      `Write in a warm Southern US style. Extra polite and gracious, use "bless your heart"-adjacent warmth, reference family or church if plausible, and close with something like "I do hope you'll forgive me".`,
-  'US.Midwest':    `Write in a Midwestern style. Self-deprecating, modest, apologetic to a fault. Very sincere. Might over-explain a mundane inconvenience. "Shoot, I'm real sorry about this" energy. Humble and earnest.`,
-  'US.Texas':      `Write in a Texan style. Big, generous apology with a bit of swagger. Might reference the sheer scale of the inconvenience. Warm but confident. "I give you my word this won't happen again" feels right.`,
-  'US.NewEngland': `Write in a dry New England style. Reserved, understated, matter-of-fact. Not cold, just efficient. A Bostonian would never over-apologise — brief, honest, and slightly blunt.`,
-
-  'UK.national':   `Write in a standard British style. Indirect, understated, excessively polite. Apologise for things that aren't your fault. Elevate a mild inconvenience to near-catastrophe. "I do hope this hasn't caused too much bother."`,
-  'UK.London':     `Write in educated London (Received Pronunciation) style. Articulate, measured, politely regretful. Not too stiff — modern London professional. References to "the commute" or "the Central line" are fair game.`,
-  'UK.Cockney':    `Write in Cockney rhyming slang style. Use rhyming slang naturally: "dog and bone" (phone), "plates of meat" (feet), "trouble and strife" (wife), "apple and pears" (stairs), "brown bread" (dead), "cream crackered" (knackered). Keep it authentic and colourful.`,
-  'UK.Manchester': `Write in a Manchester style. Straight-talking, warm, a bit dry. Working class pride, no pretension. Might mention "it were proper hectic" or "I've been absolutely mithered". Genuine and unpretentious.`,
-  'UK.Leeds':      `Write in a Leeds / Yorkshire style. Blunt, honest, proud. Yorkshire folk don't faff about — the excuse is brief, sincere, and to the point. Might use "nowt" or "summat".`,
-  'UK.Liverpool':  `Write in a Scouse (Liverpool) style. Warm, chatty, a little self-dramatising, very community-minded. Might reference "the family" or "our kid". Friendly and slightly rapid-fire. "Honest to God, la, I'm made up to explain..."`,
-  'UK.Scotland':   `Write in a Scottish style. Dry humour, no-nonsense, quietly self-deprecating. Use Scottish vocabulary naturally: "pure", "wee", "Baltic", "outwith".`,
-  'UK.Wales':      `Write in a Welsh style. Warm, musical cadence, community-focused, slightly poetic. Welsh people are famously polite and community-minded. Genuine and heartfelt.`,
-  'UK.Posh':       `Write in an extremely upper-class British style. Think Eton, the Home Counties. Vocabulary: "frightfully", "terribly sorry", "one simply couldn't", "ghastly business", "do forgive one". Absurdly over-polished.`,
-
-  'AT.national':   `Schreibe auf Österreichischem Deutsch. Formell, etwas fatalistisch, bürokratischer Flair. Verwende österreichische Ausdrücke und Grammatik. Verweise auf familiäre Verpflichtungen oder Gesundheitsbeschwerden. Etwas resigniert — ein Hauch Weltschmerz ist angebracht.`,
-  'AT.Vienna':     `Schreibe auf Wienerisch — dem charmant-schnodderigen Dialekt der Wiener. Verwende wienerische Ausdrücke und Grammatik. Typische Ausdrücke wie "Schau'n Sie", "I hob's net bösartig gemeint", "wia's halt so is". Leicht melancholisch, charmant und mit Wiener Schmäh.`,
-  'AT.Tirol':      `Schreibe im Tiroler Stil — bodenständig, naturverbunden, leicht kernig. Verwende tirolerische Ausdrücke und Grammatik. Tiroler sind direkt und ehrlich. Dialektfärbung ist willkommen: "des hot mi echt gstört", "i woar nimmer anders".`,
-  'AT.Styria':     `Schreibe im steirischen Stil — herzlich, bodenständig, mit einer Prise Sturheit. Verwende steirische Ausdrücke und Grammatik. Könnte Wein, Familie oder das Wetter erwähnen. Wärmer und direkter als Wien.`,
-  'AT.Salzburg':   `Schreibe im Salzburger Stil — kulturbewusst, leicht gehoben, aber freundlich. Verwende salzburgerische Ausdrücke und Grammatik. Formeller als Tirol, weniger ironisch als Wien.`,
-  'AT.Vorarlberg': `Schreibe im Vorarlberger Stil — dem alemannischen Dialekt Österreichs, der dem Schweizerdeutschen ähnelt. Verwende Vorarlberger Ausdrücke und Grammatik. Direkt, bodenständig, ordnungsliebend.`,
-  'AT.Burgenland': `Schreibe im Burgenländischen Stil — warm, ländlich, mit ungarischen Einflüssen. Verwende burgenländische Ausdrücke und Grammatik. Herzlich und bodenständig.`,
-  'AT.Carinthia': `Schreibe im Kärntner Stil — lebhaft, naturverbunden, mit slowenischen Einflüssen. Verwende kärntnerische Ausdrücke und Grammatik. Fröhlich und direkt.`,
-  'AT.LowerAustria': `Schreibe im Niederösterreichischen Stil — traditionell, weinbaugeprägt, höflich. Verwende niederösterreichische Ausdrücke und Grammatik. Kultiviert und zuvorkommend.`,
-  'AT.UpperAustria': `Schreibe im Oberösterreichischen Stil — industriell, fleißig, mit bayerischen Einflüssen. Verwende oberösterreichische Ausdrücke und Grammatik. Praktisch und verlässlich.`,
-
-  'CH.national':   `Schrib uf Schwiizerdütsch. Präzis, sachlich, zueverlässig. Kei Übertreibige. Verwende Schweizerdeutsche Ausdrück und Grammatik. Konkrete Vorschlag zur Wiedergutmachung am End.`,
-  'CH.Zurich':     `Schrib im Zürcher Stil — gschäftsmässig, urban, e bitz kühl aber korrekt. Effizienz isch alles. Verwende Zürcherdeutsche Ausdrück und Grammatik. Kurz, klar, professionell.`,
-  'CH.Bern':       `Schrib im Berner Stil — gemächlich, besonnen, freundlich. Der Berner isch verlässlich, aber in sim eigne Tempo. Verwende Berndeutsche Ausdrück und Grammatik.`,
-  'CH.Basel':      `Schrib im Basler Stil — weltoff, kultiviert, mit ere Prise rheinische Gelassenheit. Verwende Baslerdeutsche Ausdrück und Grammatik. Gebildet und sachlich, aber nid ohni Wärme.`,
-  'CH.Geneva':     `Écris dans un style genevois — en français suisse. Formel, diplomatique, courtois. Le ton est professionnel et mesuré. Propose une solution concrète à la fin.`,
-  'CH.Valais':     `Schrib im Walliser Stil — herzlich, bodenständig, stolz uf d'Bergwelt. Verwende Walliserdeutsche Ausdrück und Grammatik. Direkter und wärmer als Zürich. Könnt d'Arbeit ufem Hof oder s'Wetter id Bärge erwähne.`,
-  'CH.Ticino':     `Scrivi in italiano svizzero. Stile cordiale, preciso, affidabile. Nessuna esagerazione. Suggerisci una soluzione concreta alla fine.`,
-  'CH.Graubuenden': `Scriver in rumantsch grischun. Stil cordial, precis, fidabel. Nagina exaggeraziun. Suggescha ina soluziun concreta a la fin.`,
-  'CH.Lucerne':    `Schrib im Luzerner Stil — herzlich, traditionsbewusst, am Vierwaldstättersee gelegen. Verwende luzernerdeutsche Ausdrück und Grammatik. Freundlich und zuverlässig.`,
-  'CH.StGallen':   `Schrib im St. Galler Stil — textilgeprägt, innovativ, mit ostschweizerischem Flair. Verwende st.gallerische Ausdrück und Grammatik. Kreativ und bodenständig.`,
-  'CH.Thurgau':   `Schrib im Thurgauer Stil — ländlich, am Bodensee, mit alemannischem Einschlag. Verwende thurgauische Ausdrück und Grammatik. Gemütlich und direkt.`,
-  'CH.Zug':       `Schrib im Zuger Stil — wohlhabend, am Zugersee, diskret. Verwende zugische Ausdrück und Grammatik. Höflich und professionell.`,
-  'CH.Aargau':    `Schrib im Aargauer Stil — industriell, vielfältig, mit badischem Einfluss. Verwende aargauische Ausdrück und Grammatik. Praktisch und offen.`,
-};
-
-const TONE_PROMPTS = {
-  Apologetic:   'The tone should be sincere, remorseful, and apologetic — sound genuinely sorry.',
-  Funny:        'The tone should be humorous and self-deprecating — funny but still plausible.',
-  Professional: 'The tone should be polished, formal, and corporate-appropriate.',
-  Dramatic:     'The tone should be outrageously theatrical and over-the-top.',
-  Creative:     'The tone should be wildly inventive — unexpected but oddly believable.',
-};
-
-const LENGTH_PROMPTS = {
-  Short:  '1-2 sentences. Punchy and direct.',
-  Medium: '3-4 sentences. Enough detail to be convincing.',
-  Long:   '5-7 sentences. A full layered narrative with specific details.',
-};
-
 const TONES   = ['Apologetic', 'Funny', 'Professional', 'Dramatic', 'Creative'];
 const LENGTHS = ['Short', 'Medium', 'Long'];
 const COUNTRIES = ['US', 'UK', 'AT', 'CH'];
@@ -159,13 +109,28 @@ const COUNTRY_FLAGS = {
   ),
 };
 
-const QUICK_FILLS = [
-  'Late because the commute totally collapsed',
-  'Need to reschedule after a surprise family issue',
-  'Missed the deadline due to a sudden headache',
-  'Can’t make it — my internet went down',
-  'Sorry for the delay, the commute went sideways',
-];
+const SCENARIOS = {
+  General: {
+    label: 'General',
+    examples: ['Late to work', 'Missing a deadline', 'Skipping the gym'],
+  },
+  Social: {
+    label: 'Social & Parties',
+    examples: ['Late to a party', "Can't make happy hour", 'Bailing on a group hangout'],
+  },
+  Work: {
+    label: 'Work & School',
+    examples: ['Late to a meeting', 'Missed a deadline', 'Calling in sick'],
+  },
+  Relationships: {
+    label: 'Relationships',
+    examples: ['Forgetting an anniversary', 'Late for a date', 'Not replying for days'],
+  },
+  Home: {
+    label: 'Work-from-Home',
+    examples: ['Internet down', 'Power outage', 'Pet emergency'],
+  },
+};
 
 const PLACEHOLDERS = {
   US: 'e.g. late because the 405 was a total mess…',
@@ -216,6 +181,48 @@ const REGION_HINTS = {
   'CH.Aargau': 'Aargau practicality with open and clear phrasing.',
 };
 
+const REGION_EXAMPLES = {
+  'US.national': "Sorry, I got tied up with a last-minute issue and I'll be there as soon as possible.",
+  'US.NYC': "I'm running late because the subway got stuck downtown — be there in 15.",
+  'US.LA': "Totally sorry, traffic on the 405 was insane; I'll be there as soon as it clears.",
+  'US.South': "I'm sorry, family came to town unexpectedly and I'm running a bit behind.",
+  'US.Midwest': "I had a little car trouble on the way and I'm trying to get back there right now.",
+  'US.Texas': "My truck wouldn't start and I'm working on getting there as fast as I can.",
+  'US.NewEngland': "I'm delayed by a broken down bus; I should be there shortly.",
+  'UK.national': "I'm terribly sorry, I've been delayed on the commute and will arrive soon.",
+  'UK.London': "Apologies, the Central line is held and I'm doing my best to get there fast.",
+  'UK.Cockney': "Sorry mate, my dog and bone died on me and I'm running a bit late.",
+  'UK.Manchester': "I'm sorry, it's been proper hectic on the way, but I'll be there shortly.",
+  'UK.Leeds': "Can't make it on time, nowt but bad luck on the way in.",
+  'UK.Liverpool': "Honest to God, la, I'm stuck in traffic and I'll be there in a bit.",
+  'UK.Scotland': "Sorry, I've been caught up with a wee problem, but I'm on my way.",
+  'UK.Wales': "I'm really sorry, a family thing held me up, and I'm coming as soon as I can.",
+  'UK.Posh': 'I do apologise profusely; an unavoidable delay has arisen, and I shall be there shortly.',
+  'AT.national': 'Entschuldigung, ich bin wegen einer Zugverspätung später dran.',
+  'AT.Vienna': 'I hob mi beim Heurigen verzettelt, kumm sofoch wie möglich.',
+  'AT.Tirol': "I bin beim Weg runter ins Tal a bissl aufgehalten wor'n, kumm bald.",
+  'AT.Styria': "Tut mir leid, wegen der Weinernte gibt's a Verzögerung, ich bin bald da.",
+  'AT.Salzburg': 'Entschuldigung, durch den Stau bin ich etwas spät, komme gleich.',
+  'AT.Vorarlberg': 'I bi wegen em Verkehr uf dä Autobahn no nüt ganz parat, chum bald.',
+  'AT.Burgenland': 'Entschuldigung, do war a Familienbesuch, komm gleich heim.',
+  'AT.Carinthia': 'Sorry, ich hob a klean Problem ghabt, bin bald wieder da.',
+  'AT.LowerAustria': 'Tut mir leid, der Verkehr hat mich aufgehalten, ich bin fast dort.',
+  'AT.UpperAustria': 'I bin bei da Arbeit no hängen geblieben, kumm bald.',
+  'CH.national': 'Sorry, ich bi no im Stau \u2013 ich t\u00fce bald aacho.',
+  'CH.Zurich': 'Entschuldigung, i bi im Stau uf d\u00e4 Sihlhochstrasse, chum so schnell wie m\u00f6glich.',
+  'CH.Bern': 'Sorry, es isch chli chaotisch gsi, aber ich bi unterwegs.',
+  'CH.Basel': 'Tut mir leid, ich bi no im Feierabend-Verkehr, ich chume bald.',
+  'CH.Geneva': "Je suis retard\u00e9 par un probl\u00e8me de train, j'arrive bient\u00f4t.",
+  'CH.Valais': "D'sch \u00e4n bitz Strooss isch gstoppt worde, ich bi bald da.",
+  'CH.Ticino': 'Scusa, il traffico era pazzo, arrivo il prima possibile.',
+  'CH.Graubuenden': 'Jau, es isch \u00f6ppis cho, aber ich bi bald do.',
+  'CH.Lucerne': 'Sorry, ds Tor isch zue gha, ich bi grad ufem W\u00e4g.',
+  'CH.StGallen': 'I bi grad dr\u00fcmpfer ghalte worde, chum bald.',
+  'CH.Thurgau': 'Mir isch de Bus usegfalle, i bi grad unterw\u00e4gs.',
+  'CH.Zug': 'Entschuldigung, ich werde mich versp\u00e4ten, bin gleich da.',
+  'CH.Aargau': 'Sorry, ich han no e mini Verz\u00f6gerig, bin fast da.',
+};
+
 const REGION_LABEL = {};
 Object.values(REGIONS).flat().forEach(r => { REGION_LABEL[r.id] = r.label; });
 
@@ -223,83 +230,172 @@ Object.values(REGIONS).flat().forEach(r => { REGION_LABEL[r.id] = r.label; });
 
 const getDefaultSettings = () => {
   if (typeof window === 'undefined') return { country: 'US', region: 'US.national' };
-
   const lang = navigator.language.toLowerCase();
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone.toLowerCase();
-
-  // Language-based detection
-  if (lang === 'de-at' || lang === 'de-at') return { country: 'AT', region: 'AT.national' };
+  if (lang === 'de-at') return { country: 'AT', region: 'AT.national' };
   if (lang === 'de-ch' || lang === 'fr-ch' || lang === 'it-ch') return { country: 'CH', region: 'CH.national' };
   if (lang.startsWith('en-gb') || lang === 'en-uk') return { country: 'UK', region: 'UK.national' };
   if (lang.startsWith('en-us') || lang === 'en') return { country: 'US', region: 'US.national' };
-
-  // Timezone-based fallback for Europe
-  if (timezone.includes('europe') || timezone.includes('berlin') || timezone.includes('vienna') || timezone.includes('zurich') || timezone.includes('london')) {
-    if (timezone.includes('vienna') || timezone.includes('europe/vienna')) return { country: 'AT', region: 'AT.national' };
-    if (timezone.includes('zurich') || timezone.includes('europe/zurich')) return { country: 'CH', region: 'CH.national' };
-    if (timezone.includes('london') || timezone.includes('europe/london')) return { country: 'UK', region: 'UK.national' };
-    return { country: 'UK', region: 'UK.national' }; // Default European
-  }
-
-  return { country: 'US', region: 'US.national' }; // Default
+  if (timezone.includes('vienna')) return { country: 'AT', region: 'AT.national' };
+  if (timezone.includes('zurich')) return { country: 'CH', region: 'CH.national' };
+  if (timezone.includes('london')) return { country: 'UK', region: 'UK.national' };
+  if (timezone.includes('europe')) return { country: 'UK', region: 'UK.national' };
+  return { country: 'US', region: 'US.national' };
 };
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+
+function scrollTo(id) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function trackEvent(name, params) {
+  if (typeof window !== 'undefined' && typeof window.ga === 'function') {
+    window.ga(name, params ?? {});
+  }
+}
 
 // ── COMPONENT ─────────────────────────────────────────────────────────────────
 
 export default function Home() {
-  const defaultSettings = getDefaultSettings();
-  const [occasion, setOccasion]     = useState('');
-  const [tone,     setTone]         = useState('Apologetic');
-  const [length,   setLength]       = useState('Short');
-  const [country,  setCountry]      = useState(defaultSettings.country);
-  const [region,   setRegion]       = useState(defaultSettings.region);
-  const [showOptions, setShowOptions] = useState(false);
-  const [excuse,   setExcuse]       = useState('');
-  const [excuseMeta, setExcuseMeta] = useState('');
-  const [loading,  setLoading]      = useState(false);
-  const [copied,   setCopied]       = useState(false);
+  const [occasion, setOccasion]         = useState('');
+  const [scenario, setScenario]         = useState('General');
+  const [tone,     setTone]             = useState('Apologetic');
+  const [length,   setLength]           = useState('Short');
+  // Start with the server-safe default; locale detection runs after mount
+  const [country,  setCountry]          = useState('US');
+  const [region,   setRegion]           = useState('US.national');
+  const [showOptions, setShowOptions]   = useState(false);
+  const [excuse,   setExcuse]           = useState('');
+  const [excuseMeta, setExcuseMeta]     = useState('');
+  const [loading,  setLoading]          = useState(false);
+  const [copied,   setCopied]           = useState(false);
+  const [voiceListening, setVoiceListening] = useState(false);
+  const recognitionRef = useRef(null);
+  const [userExcuse, setUserExcuse]     = useState('');
+  const [topExcuses, setTopExcuses]     = useState([]);
+  const [topLoading, setTopLoading]     = useState(true);
+  const [toast,      setToast]          = useState(null); // { msg, type: 'error'|'info' }
+  const toastTimer = useRef(null);
+
+  // ── Auth state ─────────────────────────────────────────────────────────────
+  const [user,           setUser]           = useState(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [authLoading,    setAuthLoading]    = useState(false);
+
+  const showToast = useCallback((msg, type = 'error') => {
+    setToast({ msg, type });
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 4000);
+  }, []);
+
+  // Apply locale-based defaults after mount — avoids SSR/client mismatch
+  useEffect(() => {
+    const { country: c, region: r } = getDefaultSettings();
+    setCountry(c);
+    setRegion(r);
+  }, []);
+
+  // ── Init auth listener ─────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!supabase) return;
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      // Auto-open submit modal if returning from OAuth with pending submit
+      if (session?.user && typeof window !== 'undefined') {
+        const pending = window.localStorage.getItem('excuses_pending_submit');
+        if (pending) {
+          window.localStorage.removeItem('excuses_pending_submit');
+          setShowSubmitModal(true);
+        }
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const fetchTopExcuses = useCallback(async () => {
+    try {
+      const res = await fetch('/api/top-excuses');
+      const data = await res.json();
+      if (data.excuses) setTopExcuses(data.excuses);
+    } catch (err) {
+      console.error('Failed to fetch top excuses:', err);
+    } finally {
+      setTopLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchTopExcuses(); }, [fetchTopExcuses]);
+
+  // ── Auth actions ───────────────────────────────────────────────────────────
+  const signIn = useCallback(async (provider) => {
+    if (!supabase) return;
+    setAuthLoading(true);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('excuses_pending_submit', '1');
+    }
+    await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: typeof window !== 'undefined' ? window.location.origin : '/' },
+    });
+    setAuthLoading(false);
+  }, []);
+
+  const signOut = useCallback(async () => {
+    if (!supabase) return;
+    await supabase.auth.signOut();
+    setUser(null);
+  }, []);
+
+  // ── Like ───────────────────────────────────────────────────────────────────
+  const likeExcuse = useCallback(async (id) => {
+    try {
+      const res = await fetch('/api/like', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setTopExcuses(prev => prev.map(exc => exc.id === id ? { ...exc, likes: data.likes } : exc));
+      }
+    } catch (err) {
+      console.error('Failed to like excuse:', err);
+    }
+  }, []);
 
   const handleCountry = useCallback((c) => {
     setCountry(c);
     setRegion(REGIONS[c][0].id);
   }, []);
 
+  // ── Generate ───────────────────────────────────────────────────────────────
   const generate = useCallback(async () => {
     const occ = occasion.trim();
     if (!occ) return;
-
     setLoading(true);
     setExcuse('');
-
-    const system = [
-      'You are an expert excuse writer who deeply understands cultural communication styles.',
-      'Write a single convincing excuse. No preamble — just the excuse itself.',
-      'Make this excuse sound real, culturally appropriate, and usable in a practical situation.',
-      'When possible, include a local detail or language flavor relevant to that region.',
-      CULTURE_PROMPTS[region] ?? CULTURE_PROMPTS['US.national'],
-      TONE_PROMPTS[tone],
-      LENGTH_PROMPTS[length],
-    ].join(' ');
 
     try {
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ system, user: `Generate an excuse for: ${occ}` }),
+        body: JSON.stringify({ occasion: occ, region, tone, length }),
       });
-
       const data = await res.json();
-
       if (!res.ok) {
         setExcuse(data.error ?? 'Something went wrong — please try again.');
       } else {
         setExcuse(data.text);
         setExcuseMeta(`${REGION_LABEL[region] ?? region} · ${tone} · ${length}`);
-
-        // GA4 event
-        if (typeof window !== 'undefined' && typeof window.ga === 'function') {
-          window.ga('generate_excuse', { region, tone, length });
-        }
+        trackEvent('generate_excuse', { region, tone, length });
       }
     } catch {
       setExcuse('Connection error — please try again.');
@@ -313,11 +409,72 @@ export default function Home() {
     await navigator.clipboard.writeText(excuse);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
-
-    if (typeof window !== 'undefined' && typeof window.ga === 'function') {
-      window.ga('copy_excuse', { region, tone });
-    }
+    trackEvent('copy_excuse', { region, tone });
   }, [excuse, region, tone]);
+
+  const startVoiceInput = useCallback(() => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      showToast("Voice input isn't supported in this browser. Try Chrome or Safari.", 'info');
+      return;
+    }
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onstart  = () => setVoiceListening(true);
+    recognition.onend    = () => { setVoiceListening(false); recognitionRef.current = null; };
+    recognition.onresult = (event) => setOccasion(event.results[0][0].transcript);
+    recognition.onerror  = () => { setVoiceListening(false); recognitionRef.current = null; };
+    recognitionRef.current = recognition;
+    recognition.start();
+  }, []);
+
+  useEffect(() => () => { recognitionRef.current?.abort(); }, []);
+
+  // ── Submit modal trigger — requires auth ──────────────────────────────────
+  const handleSubmitClick = useCallback(() => {
+    if (!supabase || !user) {
+      setShowLoginModal(true);
+    } else {
+      setShowSubmitModal(true);
+    }
+  }, [user]);
+
+  // ── Submit excuse ──────────────────────────────────────────────────────────
+  const submitUserExcuse = useCallback(async () => {
+    if (!userExcuse.trim()) return;
+    try {
+      const session = supabase ? (await supabase.auth.getSession()).data.session : null;
+      const token   = session?.access_token;
+
+      const res = await fetch('/api/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: JSON.stringify({ text: userExcuse.trim(), region, tone, length }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setUserExcuse('');
+        setShowSubmitModal(false);
+        fetchTopExcuses();
+      } else {
+        showToast(data.error || 'Failed to submit excuse. Please try again.');
+      }
+    } catch (err) {
+      showToast('Connection error — please try again.');
+      console.error(err);
+    }
+  }, [userExcuse, region, tone, length, fetchTopExcuses]);
+
+  // ── Scroll-to helpers for nav ─────────────────────────────────────────────
+  const goToGenerator = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setTimeout(() => document.querySelector(`.${styles.mainInput}`)?.focus(), 400);
+  }, []);
 
   return (
     <>
@@ -328,11 +485,22 @@ export default function Home() {
           excuses<span className={styles.logoAcc}>.</span>me
         </div>
         <ul className={styles.navLinks}>
-          <li>Features</li>
-          <li>How it works</li>
-          <li>Reviews</li>
+          <li onClick={() => scrollTo('features')}>Features</li>
+          <li onClick={() => scrollTo('how')}>How it works</li>
+          <li onClick={() => scrollTo('top-excuses')}>Top Excuses</li>
         </ul>
-        <button className={styles.btnNav}>Try free</button>
+        {supabase && (
+          user ? (
+            <button className={styles.btnNavUser} onClick={signOut} title="Sign out">
+              <span className={styles.userAvatar}>{(user.email?.[0] ?? '?').toUpperCase()}</span>
+              <span className={styles.userLabel}>Sign out</span>
+            </button>
+          ) : (
+            <button className={styles.btnNav} onClick={() => setShowLoginModal(true)}>
+              Sign in
+            </button>
+          )
+        )}
       </nav>
 
       {/* ── AD: Leaderboard ── */}
@@ -342,7 +510,7 @@ export default function Home() {
       <section className={styles.hero}>
         <div className={styles.heroTag}>
           <span className={styles.tagDot} />
-          AI-powered · Free to use · No account needed
+          AI-powered · Free forever · No credit card
         </div>
         <h1 className={styles.h1}>
           The excuse you need,{' '}
@@ -353,7 +521,34 @@ export default function Home() {
         </p>
 
         {/* ── GENERATOR ── */}
+        <ErrorBoundary>
         <div className={styles.genWrap}>
+
+          {/* Scenario selector */}
+          <div className={styles.scenarioRow}>
+            <span className={styles.scenarioLabel}>Category</span>
+            <div className={styles.scenarioPills}>
+              {Object.keys(SCENARIOS).map(s => (
+                <button
+                  key={s}
+                  className={`${styles.scenarioPill} ${scenario === s ? styles.scenarioPillActive : ''}`}
+                  onClick={() => setScenario(s)}
+                >
+                  {SCENARIOS[s].label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick-fill examples — shown right under the category */}
+          <div className={styles.qf}>
+            {SCENARIOS[scenario].examples.map((q, i) => (
+              <span key={q}>
+                {i > 0 && <span className={styles.qfSep}>/</span>}
+                <span className={styles.qfItem} onClick={() => setOccasion(q)}>{q}</span>
+              </span>
+            ))}
+          </div>
 
           {/* Input row */}
           <div className={styles.inputRow}>
@@ -366,6 +561,19 @@ export default function Home() {
               placeholder={PLACEHOLDERS[country] || "e.g. missing my cousin's birthday dinner…"}
               autoComplete="off"
             />
+            <button
+              className={styles.voiceBtn}
+              onClick={startVoiceInput}
+              disabled={voiceListening}
+              title="Voice input"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v1a7 7 0 0 1-14 0v-1"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+              </svg>
+            </button>
             <button
               className={styles.btnSubmit}
               onClick={generate}
@@ -405,80 +613,85 @@ export default function Home() {
             <div className={styles.optionsPopover}>
               <div className={styles.controls}>
 
-              {/* Tone */}
-              <div className={styles.ctrlGroup}>
-                <span className={styles.ctrlLabel}>Tone</span>
-                <div className={styles.ctrlPills}>
-                  {TONES.map(t => (
-                    <button
-                      key={t}
-                      className={`${styles.cpill} ${tone === t ? styles.cpillActive : ''}`}
-                      onClick={() => setTone(t)}
-                    >
-                      {t === 'Apologetic' ? 'Sorry'
-                      : t === 'Professional' ? 'Pro'
-                      : t === 'Dramatic' ? 'Drama'
-                      : t === 'Creative' ? 'Wild'
-                      : t}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Length */}
-              <div className={styles.ctrlGroup}>
-                <span className={styles.ctrlLabel}>Length</span>
-                <div className={styles.ctrlPills}>
-                  {LENGTHS.map(l => (
-                    <button
-                      key={l}
-                      className={`${styles.cpill} ${length === l ? styles.cpillActive : ''}`}
-                      onClick={() => setLength(l)}
-                    >
-                      {l}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Country + Region */}
-              <div className={styles.ctrlGroupFull}>
-                <div className={styles.ctrlGroupRow}>
-                  <span className={styles.ctrlLabel}>Style</span>
+                {/* Tone */}
+                <div className={styles.ctrlGroup}>
+                  <span className={styles.ctrlLabel}>Tone</span>
                   <div className={styles.ctrlPills}>
-                    {COUNTRIES.map(c => (
+                    {TONES.map(t => (
                       <button
-                        key={c}
-                        className={`${styles.cpill} ${styles.cpillFlag} ${country === c ? styles.cpillActive : ''}`}
-                        onClick={() => handleCountry(c)}
+                        key={t}
+                        className={`${styles.cpill} ${tone === t ? styles.cpillActive : ''}`}
+                        onClick={() => setTone(t)}
                       >
-                        {COUNTRY_FLAGS[c]}
-                        {c === 'AT' ? 'Austria' : c === 'CH' ? 'Swiss' : c}
+                        {t === 'Apologetic' ? 'Sorry'
+                        : t === 'Professional' ? 'Pro'
+                        : t === 'Dramatic' ? 'Drama'
+                        : t === 'Creative' ? 'Wild'
+                        : t}
                       </button>
                     ))}
                   </div>
                 </div>
-                {REGIONS[country]?.length > 1 && (
-                  <div className={styles.ctrlGroupRow} style={{ paddingLeft: 46 }}>
-                    <span className={styles.ctrlLabelDim}>Region</span>
-                    <div className={styles.ctrlPills} style={{ flexWrap: 'wrap' }}>
-                      {REGIONS[country].map(r => (
+
+                {/* Length */}
+                <div className={styles.ctrlGroup}>
+                  <span className={styles.ctrlLabel}>Length</span>
+                  <div className={styles.ctrlPills}>
+                    {LENGTHS.map(l => (
+                      <button
+                        key={l}
+                        className={`${styles.cpill} ${length === l ? styles.cpillActive : ''}`}
+                        onClick={() => setLength(l)}
+                      >
+                        {l}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Country + Region */}
+                <div className={styles.ctrlGroupFull}>
+                  <div className={styles.ctrlGroupRow}>
+                    <span className={styles.ctrlLabel}>Style</span>
+                    <div className={styles.ctrlPills}>
+                      {COUNTRIES.map(c => (
                         <button
-                          key={r.id}
-                          className={`${styles.cpill} ${region === r.id ? styles.cpillActive : ''}`}
-                          onClick={() => setRegion(r.id)}
+                          key={c}
+                          className={`${styles.cpill} ${styles.cpillFlag} ${country === c ? styles.cpillActive : ''}`}
+                          onClick={() => handleCountry(c)}
                         >
-                          {r.label}
+                          {COUNTRY_FLAGS[c]}
+                          {c === 'AT' ? 'Austria' : c === 'CH' ? 'Swiss' : c}
                         </button>
                       ))}
                     </div>
                   </div>
-                )}
+                  {REGIONS[country]?.length > 1 && (
+                    <div className={styles.ctrlGroupRow} style={{ paddingLeft: 46 }}>
+                      <span className={styles.ctrlLabelDim}>Region</span>
+                      <div className={styles.ctrlPills} style={{ flexWrap: 'wrap' }}>
+                        {REGIONS[country].map(r => (
+                          <button
+                            key={r.id}
+                            className={`${styles.cpill} ${region === r.id ? styles.cpillActive : ''}`}
+                            onClick={() => setRegion(r.id)}
+                          >
+                            {r.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className={styles.styleHint}>
+                  <div>{REGION_HINTS[region] || 'Pick a style to give your excuse a local, believable voice.'}</div>
+                  {REGION_EXAMPLES[region] && (
+                    <div className={styles.styleExample}>
+                      "{REGION_EXAMPLES[region]}"
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className={styles.styleHint}>
-                {REGION_HINTS[region] || 'Pick a style to give your excuse a local, believable voice.'}
-              </div>
-            </div>
             </div>
           )}
 
@@ -500,45 +713,59 @@ export default function Home() {
             </div>
           )}
 
-          {/* Quick-fill */}
-          <div className={styles.qf}>
-            {QUICK_FILLS.map((q, i) => (
-              <span key={q}>
-                {i > 0 && <span className={styles.qfSep}>/</span>}
-                <span
-                  className={styles.qfItem}
-                  onClick={() => setOccasion(q)}
-                >
-                  {q}
-                </span>
-              </span>
-            ))}
-          </div>
         </div>
-      </section>
+        </ErrorBoundary>
 
-      {/* ── STATS ── */}
-      <div className={styles.stats}>
-        <div className={styles.statsInner}>
-          {[
-            ['2.4M+', 'Excuses written'],
-            ['98%',   'Believed rate'],
-            ['47',    'Categories'],
-            ['4.9',   'Average rating'],
-          ].map(([n, l]) => (
-            <div key={l} className={styles.stat}>
-              <span className={styles.statN}>{n}</span>
-              <span className={styles.statL}>{l}</span>
+        {/* ── TOP EXCUSES ── */}
+        <div id="top-excuses" className={styles.topExcuses}>
+          <div className={styles.topExcusesHeader}>
+            <h3 className={styles.topExcusesTitle}>Top Excuses</h3>
+            <p className={styles.topExcusesSub}>Popular ones that actually work</p>
+            <button className={styles.submitBtn} onClick={handleSubmitClick}>
+              {user ? 'Share Your Excuse' : 'Sign in to Share'}
+            </button>
+          </div>
+          {topLoading ? (
+            <div className={styles.topExcusesGrid}>
+              {[0, 1, 2, 3].map(i => (
+                <div key={i} className={`${styles.topExcuseCard} ${styles.skeletonCard}`}>
+                  <div className={`${styles.skeletonLine} ${styles.skeletonLineLong}`} />
+                  <div className={`${styles.skeletonLine} ${styles.skeletonLineMed}`} />
+                  <div className={`${styles.skeletonLine} ${styles.skeletonLineShort}`} />
+                </div>
+              ))}
             </div>
-          ))}
+          ) : topExcuses.length > 0 ? (
+            <div className={styles.topExcusesGrid}>
+              {topExcuses.map((exc) => (
+                <div key={exc.id} className={styles.topExcuseCard}>
+                  <p className={styles.topExcuseText}>{exc.text}</p>
+                  <div className={styles.topExcuseMeta}>
+                    <span>{exc.region} · {exc.tone} · {exc.length}</span>
+                    <div className={styles.topExcuseActions}>
+                      <button className={styles.topExcuseLike} onClick={() => likeExcuse(exc.id)}>
+                        +1 {exc.likes}
+                      </button>
+                      <button className={styles.topExcuseCopy} onClick={() => navigator.clipboard.writeText(exc.text)}>Copy</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className={styles.topExcusesEmpty}>
+              No excuses yet — be the first to share one!
+            </div>
+          )}
         </div>
-      </div>
+
+      </section>
 
       {/* ── AD: Rectangle ── */}
       <AdSlot type="rectangle" />
 
       {/* ── FEATURES ── */}
-      <section className={styles.features}>
+      <section id="features" className={styles.features}>
         <div className={styles.secLabel}>Features</div>
         <h2 className={styles.h2}>Everything you need.<br />Nothing you don&apos;t.</h2>
         <p className={styles.secSub}>Built for the moment of panic. Designed to feel effortless.</p>
@@ -585,7 +812,7 @@ export default function Home() {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <div className={styles.how}>
+      <div id="how" className={styles.how}>
         <div className={styles.howInner}>
           <div className={styles.howLeft}>
             <div className={styles.secLabel}>How it works</div>
@@ -624,37 +851,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ── TESTIMONIALS ── */}
-      <section className={styles.testimonials}>
-        <div className={styles.secLabel}>Reviews</div>
-        <h2 className={styles.h2}>It actually works.</h2>
-        <div className={styles.testiGrid}>
-          {[
-            { init: 'JL', name: 'Jamie L.', role: 'Account Manager',      quote: '"Used the Professional tone for a missed client call. My boss actually complimented how I handled it."' },
-            { init: 'SK', name: 'Sam K.',   role: 'Professional Avoider', quote: '"Dramatic mode saved my relationship. My partner forgot they were even mad. I\'ve used it four times since."' },
-            { init: 'MR', name: 'Morgan R.', role: 'Enthusiastic Non-Exerciser', quote: '"Skipped the gym 47 times. My trainer believes every single excuse. I sleep soundly and have no regrets."' },
-          ].map(({ init, name, role, quote }) => (
-            <div key={name} className={styles.testi}>
-              <div className={styles.testiStars}>
-                {Array(5).fill(null).map((_, i) => (
-                  <svg key={i} viewBox="0 0 24 24" width="11" height="11">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="var(--acc)" />
-                  </svg>
-                ))}
-              </div>
-              <p className={styles.testiQuote}>{quote}</p>
-              <div className={styles.testiAuthor}>
-                <div className={styles.av}>{init}</div>
-                <div>
-                  <div className={styles.testiName}>{name}</div>
-                  <div className={styles.testiRole}>{role}</div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* ── AD: Banner ── */}
       <AdSlot type="banner" />
 
@@ -665,12 +861,9 @@ export default function Home() {
         <div className={styles.ctaBtns}>
           <button
             className={`${styles.btnLg} ${styles.btnLgDark}`}
-            onClick={() => {
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-              setTimeout(() => document.querySelector(`.${styles.mainInput}`)?.focus(), 400);
-            }}
+            onClick={goToGenerator}
           >
-            Try it now
+            Generate now
           </button>
         </div>
       </section>
@@ -681,12 +874,83 @@ export default function Home() {
           excuses<span className={styles.logoAcc}>.</span>me
         </div>
         <div className={styles.footLinks}>
-          <span>Privacy</span>
-          <span>Terms</span>
-          <span>Contact</span>
+          <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms</a>
+          <a href="mailto:hello@excuses.me">Contact</a>
         </div>
-        <span className={styles.footCopy}>© 2026 — use responsibly</span>
+        <span className={styles.footCopy}>© 2026 — use responsibly. Ads help keep this service free.</span>
       </footer>
+
+      {/* ── SUBMIT MODAL ── */}
+      {showSubmitModal && (
+        <div className={styles.modalOverlay} onClick={() => setShowSubmitModal(false)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <h4 className={styles.modalTitle}>Share Your Excuse</h4>
+            <textarea
+              className={styles.modalTextarea}
+              value={userExcuse}
+              onChange={e => setUserExcuse(e.target.value)}
+              placeholder="Share a funny or useful excuse you've used…"
+              rows={4}
+            />
+            <p className={styles.modalNote}>
+              Keep it clean — submissions are moderated. By sharing you agree to our{' '}
+              <a href="/privacy" target="_blank">Privacy Policy</a>.
+            </p>
+            <div className={styles.modalBtns}>
+              <button className={styles.modalCancel} onClick={() => setShowSubmitModal(false)}>Cancel</button>
+              <button className={styles.modalSubmit} onClick={submitUserExcuse}>Share</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TOAST ── */}
+      {toast && (
+        <div className={`${styles.toast} ${toast.type === 'info' ? styles.toastInfo : styles.toastError}`}>
+          {toast.msg}
+          <button className={styles.toastClose} onClick={() => setToast(null)}>✕</button>
+        </div>
+      )}
+
+      {/* ── LOGIN MODAL ── */}
+      {showLoginModal && (
+        <div className={styles.modalOverlay} onClick={() => setShowLoginModal(false)}>
+          <div className={styles.modal} onClick={e => e.stopPropagation()}>
+            <button className={styles.modalClose} onClick={() => setShowLoginModal(false)} aria-label="Close">✕</button>
+            <h4 className={styles.modalTitle}>Sign in to share</h4>
+            <p className={styles.loginSub}>
+              Generating excuses is always free. Sign in to share yours with the community.
+            </p>
+            <div className={styles.loginBtns}>
+              <button
+                className={styles.loginBtn}
+                onClick={() => signIn('google')}
+                disabled={authLoading}
+              >
+                <svg viewBox="0 0 24 24" width="18" height="18" style={{ flexShrink: 0 }}>
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                Continue with Google
+              </button>
+              <button
+                className={`${styles.loginBtn} ${styles.loginBtnApple}`}
+                onClick={() => signIn('apple')}
+                disabled={authLoading}
+              >
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" style={{ flexShrink: 0 }}>
+                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                </svg>
+                Continue with Apple
+              </button>
+            </div>
+            <p className={styles.loginNote}>No spam. No nonsense. Just excuses.</p>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -699,12 +963,20 @@ function AdSlot({ type }) {
     rectangle:   process.env.NEXT_PUBLIC_ADSENSE_SLOT_RECTANGLE,
     banner:      process.env.NEXT_PUBLIC_ADSENSE_SLOT_BANNER,
   };
-
   const dims = {
     leaderboard: { width: '100%', maxWidth: 728, height: 90 },
     rectangle:   { width: 300, height: 250 },
     banner:      { width: '100%', maxWidth: 728, height: 60 },
   }[type];
+
+  useEffect(() => {
+    if (!ADSENSE_ID) return;
+    try {
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+    } catch {
+      // AdSense not loaded yet — the auto-ads script will handle it
+    }
+  }, [ADSENSE_ID]);
 
   if (!ADSENSE_ID) return null;
 
@@ -734,7 +1006,6 @@ function AdSlot({ type }) {
           data-ad-format="auto"
           data-full-width-responsive="true"
         />
-        <script dangerouslySetInnerHTML={{ __html: '(adsbygoogle=window.adsbygoogle||[]).push({});' }} />
       </div>
     </div>
   );
