@@ -160,12 +160,61 @@ const COUNTRY_FLAGS = {
 };
 
 const QUICK_FILLS = [
-  'Late to work',
-  'Skipping the gym',
-  'Missing a deadline',
-  'Forgetting an anniversary',
-  'Not replying for 3 days',
+  'Late because the commute totally collapsed',
+  'Need to reschedule after a surprise family issue',
+  'Missed the deadline due to a sudden headache',
+  'Can’t make it — my internet went down',
+  'Sorry for the delay, the commute went sideways',
 ];
+
+const PLACEHOLDERS = {
+  US: 'e.g. late because the 405 was a total mess…',
+  UK: 'e.g. stuck on the Tube, need a polite excuse…',
+  AT: 'e.g. wegen dem Zugstreik komme ich später…',
+  CH: 'e.g. wegen Stau in Zürich werde ich später…',
+};
+
+const REGION_HINTS = {
+  'US.national': 'A straight-talking American style with clear apology and upbeat energy.',
+  'US.NYC': 'Fast, direct New York speak — blunt, confident, and no-nonsense.',
+  'US.LA': 'Laid-back LA style with breezy vibes and a touch of wellness tone.',
+  'US.South': 'Warm Southern charm with gracious politeness and heartfelt apology.',
+  'US.Midwest': 'Humble Midwestern honesty, perfect for a sincere, down-to-earth excuse.',
+  'US.Texas': 'Big-hearted Texan swagger with warm confidence and a solid promise to make it right.',
+  'US.NewEngland': 'Dry New England matter-of-fact style — efficient and honest without the fluff.',
+  'UK.national': 'Polite British understatement, honest and politely apologetic.',
+  'UK.London': 'Articulate London phrasing with polished, professional tone.',
+  'UK.Cockney': 'Playful Cockney slang with colourful local phrases and rhythm.',
+  'UK.Manchester': 'Straight-talking northern English with warm, no-nonsense honesty.',
+  'UK.Leeds': 'Blunt Yorkshire style — short, sincere, and to the point.',
+  'UK.Liverpool': 'Chatty Scouse warmth with friendly, slightly dramatic phrasing.',
+  'UK.Scotland': 'Dry Scottish humour with honest, practical wording.',
+  'UK.Wales': 'Warm Welsh cadence with community-minded sincerity.',
+  'UK.Posh': 'Over-polished upper-class British style, very formal and theatrical.',
+  'AT.national': 'Austrian German with polite formality and a touch of resigned charm.',
+  'AT.Vienna': 'Wiener Schmäh — charming, a little cheeky, and unmistakably Viennese.',
+  'AT.Tirol': 'Tyrolean directness with rustic honesty and grounded warmth.',
+  'AT.Styria': 'Steirisch earnestness with hospitality and a hint of stubborn pride.',
+  'AT.Salzburg': 'Cultured Salzburg tone with polite friendliness.',
+  'AT.Vorarlberg': 'Alemannic Austrian style: practical, direct, and reliable.',
+  'AT.Burgenland': 'Warm Burgenland phrasing with rural sincerity.',
+  'AT.Carinthia': 'Kärntner flair with cheerful honesty and natural charm.',
+  'AT.LowerAustria': 'Niederösterreich politeness with gentle countryside warmth.',
+  'AT.UpperAustria': 'Oberösterreich practicality with steady, reliable wording.',
+  'CH.national': 'Swiss German precision with concise, dependable phrasing.',
+  'CH.Zurich': 'Zurich business tone: sharp, efficient, and to the point.',
+  'CH.Bern': 'Bernese calm and measured speech, thoughtful and reliable.',
+  'CH.Basel': 'Basel style with cultured warmth and understated confidence.',
+  'CH.Geneva': 'Swiss French precision with courteous and diplomatic phrasing.',
+  'CH.Valais': 'Walliser warmth with mountain pride and direct kindness.',
+  'CH.Ticino': 'Ticinese Italian charm with friendly, direct wording.',
+  'CH.Graubuenden': 'Rumantsch clarity with calm, precise phrasing.',
+  'CH.Lucerne': 'Luzern warmth with traditional Swiss friendliness.',
+  'CH.StGallen': 'St. Gallen reliability with creative, grounded wording.',
+  'CH.Thurgau': 'Thurgau directness with countryside friendliness.',
+  'CH.Zug': 'Zug discretion and understated professionalism.',
+  'CH.Aargau': 'Aargau practicality with open and clear phrasing.',
+};
 
 const REGION_LABEL = {};
 Object.values(REGIONS).flat().forEach(r => { REGION_LABEL[r.id] = r.label; });
@@ -225,6 +274,8 @@ export default function Home() {
     const system = [
       'You are an expert excuse writer who deeply understands cultural communication styles.',
       'Write a single convincing excuse. No preamble — just the excuse itself.',
+      'Make this excuse sound real, culturally appropriate, and usable in a practical situation.',
+      'When possible, include a local detail or language flavor relevant to that region.',
       CULTURE_PROMPTS[region] ?? CULTURE_PROMPTS['US.national'],
       TONE_PROMPTS[tone],
       LENGTH_PROMPTS[length],
@@ -298,8 +349,7 @@ export default function Home() {
           <span className={styles.h1Acc}>now.</span>
         </h1>
         <p className={styles.heroSub}>
-          Type what you need to get out of. Pick your style and tone. Get a
-          convincing, ready-to-use excuse in seconds.
+          Type your situation. Pick a voice — from NYC bluntness to Swiss German charm. Get a real excuse that actually works.
         </p>
 
         {/* ── GENERATOR ── */}
@@ -313,7 +363,7 @@ export default function Home() {
               value={occasion}
               onChange={e => setOccasion(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && generate()}
-              placeholder="e.g. missing my cousin's birthday dinner…"
+              placeholder={PLACEHOLDERS[country] || "e.g. missing my cousin's birthday dinner…"}
               autoComplete="off"
             />
             <button
@@ -329,7 +379,7 @@ export default function Home() {
                   <polyline points="12 5 19 12 12 19"/>
                 </svg>
               )}
-              <span>{loading ? '' : 'Generate'}</span>
+              <span>{loading ? '' : 'Get excuse'}</span>
             </button>
           </div>
 
@@ -340,7 +390,7 @@ export default function Home() {
               type="button"
             >
               <span className={styles.toggleIcon}>{showOptions ? '−' : '+'}</span>
-              {showOptions ? 'Hide options' : 'Show options'}
+              {showOptions ? 'Hide style controls' : 'Show style controls'}
             </button>
             <div className={styles.optionTags}>
               <span className={styles.optionTag}>{tone}</span>
@@ -425,6 +475,9 @@ export default function Home() {
                   </div>
                 )}
               </div>
+              <div className={styles.styleHint}>
+                {REGION_HINTS[region] || 'Pick a style to give your excuse a local, believable voice.'}
+              </div>
             </div>
             </div>
           )}
@@ -440,7 +493,7 @@ export default function Home() {
                     {copied ? 'Copied' : 'Copy'}
                   </button>
                   <button className={styles.rbtn} onClick={generate}>
-                    New version
+                    Shake it up
                   </button>
                 </div>
               </div>
@@ -487,7 +540,7 @@ export default function Home() {
       {/* ── FEATURES ── */}
       <section className={styles.features}>
         <div className={styles.secLabel}>Features</div>
-        <h2 className={styles.h2}>Everything you need.<br />Nothing you don't.</h2>
+        <h2 className={styles.h2}>Everything you need.<br />Nothing you don&apos;t.</h2>
         <p className={styles.secSub}>Built for the moment of panic. Designed to feel effortless.</p>
         <div className={styles.featGrid}>
           {[

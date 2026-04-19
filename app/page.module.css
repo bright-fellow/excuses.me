@@ -131,6 +131,10 @@
   font-size: .72rem; font-weight: 500; color: #b0b0b0;
   letter-spacing: .02em; flex-shrink: 0; min-width: 38px;
 }
+.styleHint {
+  font-size: .78rem; color: #7a7a7a; margin-top: .9rem; line-height: 1.6;
+  padding: .8rem 1rem; background: rgba(227,232,255,.6); border-radius: 14px;
+}
 .ctrlLabelDim {
   font-size: .68rem; font-weight: 500; color: #c8c8c8;
   letter-spacing: .02em; flex-shrink: 0;
