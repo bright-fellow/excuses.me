@@ -35,6 +35,15 @@ const REGIONS = {
     { id: 'UK.Wales',      label: 'Wales'         },
     { id: 'UK.Posh',       label: 'Very Posh'     },
   ],
+  IE: [
+    { id: 'IE.national',   label: 'General Irish' },
+    { id: 'IE.Dublin',     label: 'Dublin'        },
+  ],
+  AU: [
+    { id: 'AU.national',   label: 'General AU'    },
+    { id: 'AU.Sydney',     label: 'Sydney'        },
+    { id: 'AU.Melbourne',  label: 'Melbourne'     },
+  ],
   AT: [
     { id: 'AT.national',   label: 'Allgemein'     },
     { id: 'AT.Vienna',     label: 'Wien'          },
@@ -46,6 +55,12 @@ const REGIONS = {
     { id: 'AT.Carinthia',  label: 'Kärnten'       },
     { id: 'AT.LowerAustria', label: 'Niederösterreich' },
     { id: 'AT.UpperAustria', label: 'Oberösterreich' },
+  ],
+  DE: [
+    { id: 'DE.national',   label: 'Allgemein'     },
+    { id: 'DE.Berlin',     label: 'Berlin'        },
+    { id: 'DE.Bavaria',    label: 'Bayern'        },
+    { id: 'DE.Hamburg',    label: 'Hamburg'       },
   ],
   CH: [
     { id: 'CH.national',   label: 'Allgemein'     },
@@ -66,7 +81,7 @@ const REGIONS = {
 
 const TONES   = ['Apologetic', 'Funny', 'Professional', 'Dramatic', 'Creative'];
 const LENGTHS = ['Short', 'Medium', 'Long'];
-const COUNTRIES = ['US', 'UK', 'AT', 'CH'];
+const COUNTRIES = ['US', 'UK', 'IE', 'AU', 'DE', 'AT', 'CH'];
 
 const COUNTRY_FLAGS = {
   US: (
@@ -92,6 +107,34 @@ const COUNTRY_FLAGS = {
       <line x1="0"  y1="7"  x2="20" y2="7"  stroke="#fff" strokeWidth="3.5"/>
       <line x1="10" y1="0"  x2="10" y2="14" stroke="#C8102E" strokeWidth="2"/>
       <line x1="0"  y1="7"  x2="20" y2="7"  stroke="#C8102E" strokeWidth="2"/>
+    </svg>
+  ),
+  IE: (
+    <svg viewBox="0 0 20 14" width="16" height="11" style={{ marginRight: 3, borderRadius: 2, flexShrink: 0 }}>
+      <rect width="20" height="14" fill="#169B62"/>
+      <rect x="6.67" width="6.67" height="14" fill="#fff"/>
+      <rect x="13.33" width="6.67" height="14" fill="#FF883E"/>
+    </svg>
+  ),
+  AU: (
+    <svg viewBox="0 0 20 14" width="16" height="11" style={{ marginRight: 3, borderRadius: 2, flexShrink: 0 }}>
+      <rect width="20" height="14" fill="#00008B"/>
+      <rect x="0" y="0" width="10" height="7" fill="#012169"/>
+      <line x1="0" y1="0" x2="10" y2="7" stroke="#fff" strokeWidth="1.8"/>
+      <line x1="10" y1="0" x2="0" y2="7" stroke="#fff" strokeWidth="1.8"/>
+      <line x1="0" y1="0" x2="10" y2="7" stroke="#C8102E" strokeWidth="1"/>
+      <line x1="10" y1="0" x2="0" y2="7" stroke="#C8102E" strokeWidth="1"/>
+      <line x1="5" y1="0" x2="5" y2="7" stroke="#fff" strokeWidth="2.5"/>
+      <line x1="0" y1="3.5" x2="10" y2="3.5" stroke="#fff" strokeWidth="2.5"/>
+      <line x1="5" y1="0" x2="5" y2="7" stroke="#C8102E" strokeWidth="1.4"/>
+      <line x1="0" y1="3.5" x2="10" y2="3.5" stroke="#C8102E" strokeWidth="1.4"/>
+    </svg>
+  ),
+  DE: (
+    <svg viewBox="0 0 20 14" width="16" height="11" style={{ marginRight: 3, borderRadius: 2, flexShrink: 0 }}>
+      <rect width="20" height="14" fill="#FFCE00"/>
+      <rect width="20" height="4.67" fill="#000"/>
+      <rect y="4.67" width="20" height="4.67" fill="#DD0000"/>
     </svg>
   ),
   AT: (
@@ -135,6 +178,9 @@ const SCENARIOS = {
 const PLACEHOLDERS = {
   US: 'e.g. late because the 405 was a total mess…',
   UK: 'e.g. stuck on the Tube, need a polite excuse…',
+  IE: 'e.g. missed the meeting, need a charming excuse…',
+  AU: 'e.g. running late, need a casual no-dramas excuse…',
+  DE: 'e.g. zu spät zur Besprechung, brauche eine Entschuldigung…',
   AT: 'e.g. wegen dem Zugstreik komme ich später…',
   CH: 'e.g. wegen Stau in Zürich werde ich später…',
 };
@@ -156,6 +202,15 @@ const REGION_HINTS = {
   'UK.Scotland': 'Dry Scottish humour with honest, practical wording.',
   'UK.Wales': 'Warm Welsh cadence with community-minded sincerity.',
   'UK.Posh': 'Over-polished upper-class British style, very formal and theatrical.',
+  'IE.national': 'Warm Irish charm — self-deprecating, storytelling, and never grovelling.',
+  'IE.Dublin': 'Dublin wit — quick, urban, mortified but funny about it.',
+  'AU.national': 'Relaxed Australian — "no dramas mate", honest, anti-pretentious.',
+  'AU.Sydney': 'Sydney confidence — coastal, polished, traffic on the M1.',
+  'AU.Melbourne': 'Melbourne irony — café-culture, tram delays, dry self-awareness.',
+  'DE.national': 'Standard German directness — structured, punctuality-obsessed, concrete solution at the end.',
+  'DE.Berlin': 'Berlin Schnauze — blunt, urban, zero pretence, secretly warm.',
+  'DE.Bavaria': 'Bavarian Gemütlichkeit — warm, hearty apology with a bit of Weißbier energy.',
+  'DE.Hamburg': 'Hanseatic restraint — reserved, maritime, dignified, no overdramatising.',
   'AT.national': 'Austrian German with polite formality and a touch of resigned charm.',
   'AT.Vienna': 'Wiener Schmäh — charming, a little cheeky, and unmistakably Viennese.',
   'AT.Tirol': 'Tyrolean directness with rustic honesty and grounded warmth.',
@@ -198,6 +253,15 @@ const REGION_EXAMPLES = {
   'UK.Scotland': "Sorry, I've been caught up with a wee problem, but I'm on my way.",
   'UK.Wales': "I'm really sorry, a family thing held me up, and I'm coming as soon as I can.",
   'UK.Posh': 'I do apologise profusely; an unavoidable delay has arisen, and I shall be there shortly.',
+  'IE.national': "Sure I'm mortified — something came up at the last minute and I couldn't get out of it.",
+  'IE.Dublin': "Ah Jaysus, I'm pure mortified — the Dart was destroyed and I'm only after arriving.",
+  'AU.national': "No dramas, mate — something came up and I'm running a bit behind, be there soon.",
+  'AU.Sydney': "Absolute shocker of a morning — M1 was a car park, should be there in twenty.",
+  'AU.Melbourne': "Tram got held up — classic Melbourne, to be fair. I'll be there as soon as it moves.",
+  'DE.national': 'Ich entschuldige mich für die Verspätung — es gab unvorhergesehene Umstände und ich bin sofort unterwegs.',
+  'DE.Berlin': "Ey, tut mir leid — ich hab's vergeigt heute Morgen, komme so schnell wie möglich.",
+  'DE.Bavaria': 'Schau, des tut mir wirklich leid — des hat sich leider so ergeben, aber i kumm so schnell wie möglichst.',
+  'DE.Hamburg': 'Ich bitte um Entschuldigung — eine unvorhergesehene Verzögerung hat mich aufgehalten; ich bin auf dem Weg.',
   'AT.national': 'Entschuldigung, ich bin wegen einer Zugverspätung später dran.',
   'AT.Vienna': 'I hob mi beim Heurigen verzettelt, kumm sofoch wie möglich.',
   'AT.Tirol': "I bin beim Weg runter ins Tal a bissl aufgehalten wor'n, kumm bald.",
@@ -234,10 +298,16 @@ const getDefaultSettings = () => {
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone.toLowerCase();
   if (lang === 'de-at') return { country: 'AT', region: 'AT.national' };
   if (lang === 'de-ch' || lang === 'fr-ch' || lang === 'it-ch') return { country: 'CH', region: 'CH.national' };
+  if (lang === 'de-de' || lang === 'de') return { country: 'DE', region: 'DE.national' };
+  if (lang.startsWith('en-ie')) return { country: 'IE', region: 'IE.national' };
+  if (lang.startsWith('en-au')) return { country: 'AU', region: 'AU.national' };
   if (lang.startsWith('en-gb') || lang === 'en-uk') return { country: 'UK', region: 'UK.national' };
   if (lang.startsWith('en-us') || lang === 'en') return { country: 'US', region: 'US.national' };
   if (timezone.includes('vienna')) return { country: 'AT', region: 'AT.national' };
+  if (timezone.includes('berlin') || timezone.includes('germany')) return { country: 'DE', region: 'DE.national' };
   if (timezone.includes('zurich')) return { country: 'CH', region: 'CH.national' };
+  if (timezone.includes('dublin')) return { country: 'IE', region: 'IE.national' };
+  if (timezone.includes('sydney') || timezone.includes('melbourne') || timezone.includes('brisbane')) return { country: 'AU', region: 'AU.national' };
   if (timezone.includes('london')) return { country: 'UK', region: 'UK.national' };
   if (timezone.includes('europe')) return { country: 'UK', region: 'UK.national' };
   return { country: 'US', region: 'US.national' };
@@ -661,7 +731,7 @@ export default function Home() {
                           onClick={() => handleCountry(c)}
                         >
                           {COUNTRY_FLAGS[c]}
-                          {c === 'AT' ? 'Austria' : c === 'CH' ? 'Swiss' : c}
+                          {c === 'AT' ? 'Austria' : c === 'CH' ? 'Swiss' : c === 'DE' ? 'Germany' : c === 'IE' ? 'Ireland' : c === 'AU' ? 'Australia' : c}
                         </button>
                       ))}
                     </div>

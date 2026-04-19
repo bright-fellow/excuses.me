@@ -51,15 +51,16 @@ export async function POST(request) {
     return Response.json({ error: 'Invalid length' }, { status: 400 });
   }
 
-  const system = [
-    'You are an expert excuse writer who deeply understands cultural communication styles.',
-    'Write a single convincing excuse. No preamble — just the excuse itself.',
-    'Make this excuse sound real, culturally appropriate, and usable in a practical situation.',
-    'When possible, include a local detail or language flavor relevant to that region.',
-    CULTURE_PROMPTS[region],
-    TONE_PROMPTS[tone],
-    LENGTH_PROMPTS[length],
-  ].join(' ');
+  const system = `You are an expert excuse writer. Output only the excuse itself — no preamble, no label, no quotation marks.
+
+REGIONAL VOICE:
+${CULTURE_PROMPTS[region].trim()}
+
+${TONE_PROMPTS[tone]}
+
+${LENGTH_PROMPTS[length]}
+
+The excuse must sound like a real person wrote it in that voice. Include at least one concrete local or cultural detail that makes it feel specific and authentic.`;
 
   try {
     const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
