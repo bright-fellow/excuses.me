@@ -3,6 +3,11 @@ import ConsentAndTracking from './components/ConsentAndTracking';
 import './globals.css';
 
 export const metadata = {
+  verification: {
+    other: {
+      'google-adsense-account': 'ca-pub-7849668568457352',
+    },
+  },
   title: 'excuses.me — A perfect excuse, every time',
   description:
     'AI-powered excuse generator. Type the situation, pick your tone, style and length — get a convincing excuse in seconds.',
